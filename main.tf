@@ -35,6 +35,34 @@ resource oci_core_internet_gateway "my_ig_gateway" {
   enabled= true
 }
 
+# https://docs.oracle.com/en-us/iaas/developer-tutorials/tutorials/tf-vcn/01-summary.htm
+resource oci_core_security_list "my_tf_created_sec_list" {
+  compartment_id = var.compartment_id
+  vcn_id = oci_core_vcn.internal.id
+  display_name = "terraform created security list"
+
+  ingress_security_rules {
+    description = "allow tcp port 80"
+    source = "0.0.0.0/0"
+    protocol = "6"
+    tcp_options  {
+      min = 80
+      max = 80
+    }    
+  }
+
+  ingress_security_rules {
+    description = "allow tcp port 22 for ssh"
+    source = "0.0.0.0/0"
+    protocol = "6"
+    tcp_options  {
+      min = 22
+      max = 22
+    }    
+  }
+  
+}
+
 resource "oci_core_route_table" "my_route_table" {
     #Required
     compartment_id = var.compartment_id
@@ -78,14 +106,20 @@ resource "oci_core_instance" "ubuntu_instance" {
   # Required
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   compartment_id = var.compartment_id
-  shape = "VM.Standard.E2.1.Micro"
-  # shape_config {
-  #   baseline_ocpu_utilization = "BASELINE_1_8"
-  #   memory_in_gbs = "6"
-  #   ocpus = "1"
+  # shape = "VM.Standard.E2.1.Micro"
+  # source_details {
+  #   source_id = var.e2_image_id
+  #   source_type = "image"
   # }
+
+  shape = "VM.Standard.A1.Flex"  
+  shape_config {
+    # baseline_ocpu_utilization = "BASELINE_1_8"
+    memory_in_gbs = "6"
+    ocpus = "2"
+  }
   source_details {
-    source_id = var.image_id
+    source_id = var.a1_image_id
     source_type = "image"
   }
 
@@ -99,4 +133,12 @@ resource "oci_core_instance" "ubuntu_instance" {
     ssh_authorized_keys = file("/home/palashkulshreshtha/.ssh/id_rsa.pub")
   } 
   preserve_boot_volume = false
+
+  # provisioner "local-exec" {
+  #   command = "sleep 200;ansible-playbook -i oci_core_instance.ubuntu_instance.public_ip playbook.yml"
+  # }
+
 }
+
+
+
