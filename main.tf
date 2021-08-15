@@ -1,3 +1,8 @@
+######
+# very good resource
+# https://blog.gleb.ca/2021/08/03/terraform-modules-simplified/
+#####
+
 # https://registry.terraform.io/providers/hashicorp/oci/latest/docs/resources/core_instance#baseline_ocpu_utilization
 
 # to get image ocid
@@ -26,7 +31,7 @@ resource "oci_core_vcn" "internal" {
   dns_label      = "internal"
   cidr_block     = "172.16.0.0/20"
   compartment_id = var.compartment_id
-  display_name   = "My internal VCN"
+  display_name   = "My internal VCN"  
 }
 
 resource oci_core_internet_gateway "my_ig_gateway" {
@@ -36,11 +41,14 @@ resource oci_core_internet_gateway "my_ig_gateway" {
 }
 
 # https://docs.oracle.com/en-us/iaas/developer-tutorials/tutorials/tf-vcn/01-summary.htm
-resource oci_core_security_list "my_tf_created_sec_list" {
+resource oci_core_default_security_list "my_tf_created_sec_list" {
   compartment_id = var.compartment_id
-  vcn_id = oci_core_vcn.internal.id
   display_name = "terraform created security list"
-
+  
+  # https://blog.gleb.ca/2021/08/03/terraform-modules-simplified/
+  # very good resource
+  manage_default_resource_id = oci_core_vcn.internal.default_security_list_id
+  
   ingress_security_rules {
     description = "allow tcp port 80"
     source = "0.0.0.0/0"
