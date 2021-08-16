@@ -68,7 +68,12 @@ resource oci_core_default_security_list "my_tf_created_sec_list" {
       max = 22
     }    
   }
-  
+
+  egress_security_rules {
+    description = "allow all outbound traffi"
+    destination = "0.0.0.0/0"
+    protocol = "all"
+  }
 }
 
 resource "oci_core_route_table" "my_route_table" {
@@ -108,45 +113,54 @@ resource "oci_core_route_table_attachment" "test_route_table_attachment" {
   route_table_id =oci_core_route_table.my_route_table.id
 }
 
-
-
-resource "oci_core_instance" "ubuntu_instance" {
-  # Required
+module "instance" {
+  source = "./modules/instance"
+  subnet_id = oci_core_subnet.dev.id
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   compartment_id = var.compartment_id
-  # shape = "VM.Standard.E2.1.Micro"
-  # source_details {
-  #   source_id = var.e2_image_id
-  #   source_type = "image"
-  # }
-
-  shape = "VM.Standard.A1.Flex"  
-  shape_config {
-    # baseline_ocpu_utilization = "BASELINE_1_8"
-    memory_in_gbs = "6"
-    ocpus = "2"
-  }
-  source_details {
-    source_id = var.a1_image_id
-    source_type = "image"
-  }
-
-  # Optional
-  display_name = "launched_from_terraform"
-  create_vnic_details {
-    assign_public_ip = true
-    subnet_id = oci_core_subnet.dev.id
-  }
-  metadata = {
-    ssh_authorized_keys = file("/home/palashkulshreshtha/.ssh/id_rsa.pub")
-  } 
-  preserve_boot_volume = false
-
-  # provisioner "local-exec" {
-  #   command = "sleep 200;ansible-playbook -i oci_core_instance.ubuntu_instance.public_ip playbook.yml"
-  # }
-
+  source_id = var.a1_image_id
+  type = "arm"
+  config_map = var.instance_config_map
 }
 
+# resource "oci_core_instance" "ubuntu_instance1" {
+#   # Required
+#   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+#   compartment_id = var.compartment_id
+#   # shape = "VM.Standard.E2.1.Micro"
+#   # source_details {
+#   #   source_id = var.e2_image_id
+#   #   source_type = "image"
+#   # }
 
+#   shape = "VM.Standard.A1.Flex"  
+#   dynamic shape_config {
+#     for_each = var.instance_config_map["arm"]["shape_config"]
+#     content {
+#       # baseline_ocpu_utilization = "BASELINE_1_8"
+#       memory_in_gbs = "6"
+#       ocpus = "2"
+#     }
+#   }
+#   source_details {
+#     source_id = var.a1_image_id
+#     source_type = "image"
+#   }
+
+#   # Optional
+#   display_name = "launched_from_terraform"
+#   create_vnic_details {
+#     assign_public_ip = true
+#     subnet_id = oci_core_subnet.dev.id
+#   }
+#   metadata = {
+#     ssh_authorized_keys = file("/home/palashkulshreshtha/.ssh/id_rsa.pub")
+#   } 
+#   preserve_boot_volume = false
+
+#   # provisioner "local-exec" {
+#   #   command = "sleep 200;ansible-playbook -i oci_core_instance.ubuntu_instance.public_ip playbook.yml"
+#   # }
+
+# }
 
